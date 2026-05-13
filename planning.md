@@ -504,16 +504,24 @@ Los tests son funcionales — verifican navegación, carga de páginas, interacc
   - [x] Build exitoso en Vercel (0 errores, 45s build time)
   - [x] Producción: https://trading-dashboard-omega-lemon.vercel.app
   - [x] Dominio Vercel configurado con SSL automático
+- [x] **Sentry — Monitorización**:
+  - [x] `sentry.client.config.ts` — client-side init con tracesSampleRate 0.1
+  - [x] `sentry.server.config.ts` — server-side init
+  - [x] `src/instrumentation.ts` — register hook para Next.js
+  - [x] `next.config.ts` — wrapped con `withSentryConfig`
+  - [x] Tunnel `/monitoring` para evitar adblockers
+  - [x] Source maps ocultos en producción
+  - [x] Automatic Vercel Monitors habilitado
+  - [x] SENTRY_DSN y SENTRY_API_KEY en Vercel env vars
+  - [x] Vercel Log Drain configurado
 - [ ] Deploy Python worker en Railway — requiere cuenta Railway
-- [ ] Monitorización: Sentry + Vercel Analytics
 
 ```comentario
-Vercel deploy configurado con todas las environment variables de producción.
-El build usa Next.js 16.2.6 con Turbopack. Tiempo de build: ~45s.
-Para deploys futuros: `vercel --prod` desde el directorio trading-dashboard/.
+Vercel deploy: https://trading-dashboard-omega-lemon.vercel.app
+GitHub repo: https://github.com/Xaviar29/tree-graph-tests
+Sentry: https://sentry.io/orgs/javi-s-projects3
+Build: Next.js 16.2.6 + Turbopack, ~45s en Vercel
 ```
-.env.local tiene UPSTASH_REDIS_REST_URL y UPSTASH_REDIS_REST_TOKEN.
-La caché Redis persiste la AD Line y datos de breadth entre reinicios del servidor.
 Rate limiting protege todas las API routes contra abuso (30 requests/30s por IP).
 ```
 
