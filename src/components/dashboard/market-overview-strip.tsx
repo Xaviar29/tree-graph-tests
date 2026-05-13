@@ -76,15 +76,15 @@ export function MarketOverviewStrip({
   lastUpdated,
 }: MarketOverviewStripProps) {
   return (
-    <div className="flex items-center gap-6 px-4 py-2 bg-card/50 border-b text-xs">
-      <div className={cn('flex items-center gap-1.5', getSessionColor(session))}>
+    <div className="flex items-center gap-4 sm:gap-6 px-3 sm:px-4 py-2 bg-card/50 border-b text-[10px] sm:text-xs overflow-x-auto no-scrollbar whitespace-nowrap">
+      <div className={cn('flex items-center gap-1.5 shrink-0', getSessionColor(session))}>
         {getSessionIcon(session)}
         <span className="font-medium">{getSessionLabel(session)}</span>
       </div>
 
-      <div className="h-3 w-px bg-border" />
+      <div className="h-3 w-px bg-border shrink-0" />
 
-      <div className="flex items-center gap-1.5 text-muted-foreground">
+      <div className="flex items-center gap-1.5 text-muted-foreground shrink-0">
         <Clock className="h-3 w-3" />
         <span>
           {lastUpdated
@@ -99,8 +99,8 @@ export function MarketOverviewStrip({
 
       {vix !== undefined && (
         <>
-          <div className="h-3 w-px bg-border" />
-          <div className="flex items-center gap-1.5">
+          <div className="h-3 w-px bg-border shrink-0" />
+          <div className="flex items-center gap-1.5 shrink-0">
             <Activity className="h-3 w-3 text-accent-cyan" />
             <span className="text-muted-foreground">VIX:</span>
             <span
@@ -117,14 +117,14 @@ export function MarketOverviewStrip({
 
       {fearGreed !== undefined && (
         <>
-          <div className="h-3 w-px bg-border" />
-          <div className="flex items-center gap-1.5">
+          <div className="h-3 w-px bg-border shrink-0" />
+          <div className="flex items-center gap-1.5 shrink-0">
             <Gauge className="h-3 w-3 text-muted-foreground" />
             <span className="text-muted-foreground">F&G:</span>
             <span className={cn('font-mono font-medium', getFearGreedColor(fearGreed))}>
               {fearGreed.toFixed(0)}
             </span>
-            <span className="text-muted-foreground text-[10px]">
+            <span className="text-muted-foreground hidden sm:inline text-[10px]">
               ({getFearGreedLabel(fearGreed)})
             </span>
           </div>
@@ -133,8 +133,8 @@ export function MarketOverviewStrip({
 
       {sp500Change !== undefined && (
         <>
-          <div className="h-3 w-px bg-border" />
-          <div className="flex items-center gap-1.5">
+          <div className="h-3 w-px bg-border shrink-0" />
+          <div className="flex items-center gap-1.5 shrink-0">
             <TrendingUp className="h-3 w-3 text-muted-foreground" />
             <span className="text-muted-foreground">S&P:</span>
             <span
@@ -150,7 +150,7 @@ export function MarketOverviewStrip({
         </>
       )}
 
-      <div className="ml-auto">
+      <div className="ml-auto hidden md:block shrink-0">
         <span className="text-muted-foreground/50 text-[10px]">Live Data</span>
       </div>
     </div>

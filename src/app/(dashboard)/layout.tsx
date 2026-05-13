@@ -2,6 +2,7 @@
 
 import { Sidebar } from '@/components/dashboard/sidebar'
 import { Header } from '@/components/dashboard/header'
+import { BottomNav } from '@/components/dashboard/bottom-nav'
 import { GlobalSearch } from '@/components/shared/global-search'
 import { AlertEngine } from '@/components/shared/alert-engine'
 import { useUIStore } from '@/hooks/use-ui'
@@ -27,7 +28,7 @@ export default function DashboardLayout({
       {/* Desktop sidebar */}
       <div className={cn(
         'hidden lg:block transition-all duration-300',
-        presentationMode ? 'w-0 overflow-hidden' : '',
+        presentationMode ? 'w-0 overflow-hidden opacity-0 pointer-events-none invisible' : 'w-auto opacity-100',
       )}>
         <Sidebar />
       </div>
@@ -45,7 +46,7 @@ export default function DashboardLayout({
         <Header onMenuClick={() => setMobileOpen(true)} />
         <main className={cn(
           'flex-1 overflow-y-auto bg-background transition-all duration-300',
-          presentationMode ? 'p-6' : 'p-2 sm:p-4',
+          presentationMode ? 'p-6' : 'p-2 sm:p-4 pb-20 lg:pb-4',
         )}>
           <AnimatePresence mode="wait">
             <motion.div
@@ -62,6 +63,7 @@ export default function DashboardLayout({
       </div>
       <GlobalSearch />
       <AlertEngine />
+      <BottomNav onMenuClick={() => setMobileOpen(true)} />
     </div>
   )
 }

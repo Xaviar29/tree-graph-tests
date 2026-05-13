@@ -25,7 +25,9 @@ const COLORS = {
 // Custom Content for Treemap Node
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const CustomizedContent = (props: any) => {
-  const { root, depth, x, y, width, height, index, payload, colors, rank, name, value, symbol } = props
+  const { x, y, width, height, value, symbol } = props
+
+  if (width <= 0 || height <= 0) return null
 
   // Determine color based on value (change percent)
   const isGain = value > 0
@@ -37,6 +39,10 @@ const CustomizedContent = (props: any) => {
   const opacity = 0.2 + (magnitude * 0.8) // min 20% opacity, max 100%
   const fill = `rgba(${baseColor}, ${opacity})`
 
+  // Dynamic font sizing
+  const symbolFontSize = Math.min(Math.max(width / 6, 10), 16)
+  const valueFontSize = Math.min(Math.max(width / 8, 8), 12)
+
   return (
     <g>
       <rect
@@ -46,36 +52,37 @@ const CustomizedContent = (props: any) => {
         height={height}
         fill={fill}
         stroke="#141414"
-        strokeWidth={2}
+        strokeWidth={1.5}
       />
-      {width > 50 && height > 30 && (
-        <>
-          <text
-            x={x + width / 2}
-            y={y + height / 2 - 8}
-            textAnchor="middle"
-            fill="#fff"
-            fontSize={14}
-            fontWeight="bold"
-          >
-            {symbol}
-          </text>
-          {height > 50 && (
-            <text
-              x={x + width / 2}
-              y={y + height / 2 + 12}
-              textAnchor="middle"
-              fill="rgba(255,255,255,0.8)"
-              fontSize={12}
-            >
-              {value > 0 ? '+' : ''}{value.toFixed(2)}%
-            </text>
-          )}
-        </>
+      {width > 30 && height > 20 && (
+        <text
+          x={x + width / 2}
+          y={y + height / 2 + (height > 40 ? -4 : 4)}
+          textAnchor="middle"
+          fill="#fff"
+          fontSize={symbolFontSize}
+          fontWeight="bold"
+          style={{ pointerEvents: 'none' }}
+        >
+          {symbol}
+        </text>
+      )}
+      {width > 45 && height > 45 && (
+        <text
+          x={x + width / 2}
+          y={y + height / 2 + 12}
+          textAnchor="middle"
+          fill="rgba(255,255,255,0.8)"
+          fontSize={valueFontSize}
+          style={{ pointerEvents: 'none' }}
+        >
+          {value > 0 ? '+' : ''}{value.toFixed(2)}%
+        </text>
       )}
     </g>
   )
 }
+
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const CustomTooltip = ({ active, payload }: any) => {

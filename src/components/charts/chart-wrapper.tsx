@@ -58,7 +58,7 @@ export function ChartWrapper({
   exportable,
   children,
   className,
-  height,
+  height: initialHeight,
   onRetry,
   quickStats,
   legendItems,
@@ -81,13 +81,16 @@ export function ChartWrapper({
     link.click()
   }, [title])
 
+  // Adjust height for mobile
+  const height = initialHeight
+
   return (
     <div ref={chartRef} className={cn('rounded-xl border bg-card text-card-foreground overflow-hidden', className)}>
-      <div className="px-4 pt-4 pb-3 border-b bg-card/50">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-base font-semibold text-foreground">{title}</h3>
+      <div className="px-3 sm:px-4 pt-4 pb-3 border-b bg-card/50">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center flex-wrap gap-2">
+              <h3 className="text-sm sm:text-base font-semibold text-foreground truncate">{title}</h3>
               {hint && (
                 <ShadcnTooltip>
                   <TooltipTrigger>
@@ -99,7 +102,7 @@ export function ChartWrapper({
               {quickStats && (
                 <span
                   className={cn(
-                    'flex items-center gap-0.5 text-xs font-medium px-1.5 py-0.5 rounded',
+                    'flex items-center gap-0.5 text-[10px] sm:text-xs font-medium px-1.5 py-0.5 rounded shrink-0',
                     isNeutral && 'bg-muted text-muted-foreground',
                     !isNeutral && isUp && 'bg-gain/10 text-gain',
                     !isNeutral && !isUp && 'bg-loss/10 text-loss',
@@ -111,28 +114,24 @@ export function ChartWrapper({
                 </span>
               )}
             </div>
-            {subtitle && <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p>}
-            {dataSource && (
-              <p className="mt-1 flex items-center gap-1 text-[10px] text-muted-foreground/50">
-                <span className="inline-block w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
-                {dataSource}
-              </p>
-            )}
+            {subtitle && <p className="mt-0.5 text-[10px] sm:text-xs text-muted-foreground truncate">{subtitle}</p>}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-3">
             {timeframes && activeTimeframe && onTimeframeChange && (
               <TimeframeSelector timeframes={timeframes} active={activeTimeframe} onChange={onTimeframeChange} />
             )}
-            {exportable && (
-              <ExportButton onExportPNG={handleExportPNG} onExportCSV={onExportCSV} />
-            )}
-            {lastUpdated && <LastUpdated date={lastUpdated} />}
+            <div className="flex items-center gap-2">
+              {exportable && (
+                <ExportButton onExportPNG={handleExportPNG} onExportCSV={onExportCSV} />
+              )}
+              {lastUpdated && <div className="hidden xs:block"><LastUpdated date={lastUpdated} /></div>}
+            </div>
           </div>
         </div>
 
         {hasQuickStats && (
-          <div className="mt-3 flex items-center gap-4 text-xs">
+          <div className="mt-3 flex items-center gap-x-4 gap-y-1 text-[10px] sm:text-xs overflow-x-auto no-scrollbar whitespace-nowrap">
             <div className="flex items-center gap-1.5">
               <span className="text-muted-foreground">O:</span>
               <span className="font-mono font-medium">{quickStats.open.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
@@ -147,8 +146,8 @@ export function ChartWrapper({
               <span className="text-muted-foreground">L:</span>
               <span className="font-mono font-medium text-loss">{quickStats.low.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
-            <div className="h-3 w-px bg-border" />
-            <div className="flex items-center gap-1.5">
+            <div className="h-3 w-px bg-border hidden sm:block" />
+            <div className="flex items-center gap-1.5 sm:ml-0">
               <span className="text-muted-foreground">Chg:</span>
               <span className={cn('font-mono font-medium', isNeutral && 'text-muted-foreground', !isNeutral && isUp && 'text-gain', !isNeutral && !isUp && 'text-loss')}>
                 {isUp ? '+' : ''}{quickStats.change.toFixed(2)} ({isUp ? '+' : ''}{quickStats.changePercent.toFixed(2)}%)
@@ -158,26 +157,34 @@ export function ChartWrapper({
         )}
 
         {legendItems && legendItems.length > 0 && (
-          <div className="mt-2 flex items-center gap-4">
+          <div className="mt-2 flex items-center gap-4 overflow-x-auto no-scrollbar whitespace-nowrap">
             {legendItems.map((item, i) => (
-              <div key={i} className="flex items-center gap-1.5">
+              <div key={i} className="flex items-center gap-1.5 shrink-0">
                 <div className="w-3 h-0.5 rounded-full" style={{ backgroundColor: item.color }} />
-                <span className="text-xs text-muted-foreground">{item.label}</span>
+                <span className="text-[10px] sm:text-xs text-muted-foreground">{item.label}</span>
               </div>
             ))}
+            {dataSource && (
+              <p className="ml-auto flex items-center gap-1 text-[10px] text-muted-foreground/30 shrink-0">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
+                {dataSource}
+              </p>
+            )}
           </div>
         )}
       </div>
 
-      <div style={height ? { height: height - (hasQuickStats ? 80 : 0) } : undefined}>
+      <div style={height ? { minHeight: 300, maxHeight: height } : undefined}>
         {isLoading ? (
           <div className="flex h-full items-center justify-center p-4">
-            <div className="w-full h-full"><Skeleton className="h-full w-full rounded-lg" /></div>
+            <div className="w-full h-full min-h-[300px]"><Skeleton className="h-full w-full rounded-lg" /></div>
           </div>
         ) : error ? (
           <ErrorState message={error.message} onRetry={onRetry} />
         ) : (
-          children
+          <div className="relative w-full h-full">
+            {children}
+          </div>
         )}
       </div>
     </div>

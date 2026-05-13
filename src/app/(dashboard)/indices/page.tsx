@@ -7,6 +7,7 @@ import { Sparkline } from '@/components/charts/sparkline'
 import { MarketOverviewStrip } from '@/components/dashboard/market-overview-strip'
 import { useMarketQuote } from '@/hooks/use-market-quote'
 import { useMarketHistorical } from '@/hooks/use-market-historical'
+import { useSentiment } from '@/hooks/use-sentiment'
 import { INDEX_SYMBOLS, INDEX_LABELS } from '@/lib/constants'
 import { useState, useMemo } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -35,6 +36,7 @@ const INTERVAL_MAP: Record<string, string> = {
 
 export default function IndicesPage() {
   const { data: quotes, isLoading: quotesLoading, dataUpdatedAt } = useMarketQuote([...INDEX_SYMBOLS])
+  const { fearGreed, vix } = useSentiment()
   const [selectedSymbol, setSelectedSymbol] = useState('^GSPC')
   const [timeframe, setTimeframe] = useState('1Y')
 
@@ -96,8 +98,8 @@ export default function IndicesPage() {
   return (
     <div className="space-y-4">
       <MarketOverviewStrip
-        vix={18.5}
-        fearGreed={62}
+        vix={vix.data?.value}
+        fearGreed={fearGreed.data?.value}
         sp500Change={sp500Quote?.changePercent}
         session={
           selectedQuote?.marketState === 'PRE'

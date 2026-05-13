@@ -59,10 +59,10 @@ export default function SectorsPage() {
       </div>
 
       <Tabs defaultValue="performance" className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="performance">Rendimiento (Treemap)</TabsTrigger>
-          <TabsTrigger value="rrg">Relative Rotation Graph (RRG)</TabsTrigger>
-          <TabsTrigger value="list">Vista Detallada</TabsTrigger>
+        <TabsList className="mb-4 w-full justify-start overflow-x-auto overflow-y-hidden whitespace-nowrap scrollbar-hide">
+          <TabsTrigger value="performance" className="min-w-fit">Rendimiento (Treemap)</TabsTrigger>
+          <TabsTrigger value="rrg" className="min-w-fit">Relative Rotation Graph (RRG)</TabsTrigger>
+          <TabsTrigger value="list" className="min-w-fit">Vista Detallada</TabsTrigger>
         </TabsList>
         
         <TabsContent value="performance">
@@ -95,7 +95,7 @@ export default function SectorsPage() {
               {isLoadingRRG ? (
                 <Skeleton className="h-[600px] w-full max-w-[800px]" />
               ) : (
-                rrgData && <RRGChart data={rrgData} width={800} height={600} />
+                rrgData && <RRGChart data={rrgData} />
               )}
             </CardContent>
           </Card>
