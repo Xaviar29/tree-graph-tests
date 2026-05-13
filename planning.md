@@ -293,45 +293,46 @@ No se añadieron dependencias nuevas — todo es SVG nativo + Tailwind + Rechart
 
 ---
 
-## SPRINT 3 (Semana 5-6): Sectores + Commodities + Forex 📋 PENDIENTE
+## SPRINT 3 (Semana 5-6): Sectores + Commodities + Forex ✅ COMPLETADO
 
 ### Sectores
 
-- [ ] API Route: `GET /api/sectors/performance` — 11 ETFs SPDR vía Yahoo
-- [ ] Implementar `src/lib/calculations/rrg.ts`:
-  - [ ] JdK RS-Ratio y RS-Momentum para cada sector
-  - [ ] Clasificación en 4 cuadrantes (Leading, Weakening, Lagging, Improving)
-- [ ] API Route: `GET /api/sectors/rrg`
-- [ ] Componente: `TreemapChart` (Recharts Treemap + colores dinámicos)
-- [ ] Componente: `RRGChart` (D3 Scatter con trayectorias)
-- [ ] Página Sectores (3 tabs):
-  - [ ] Tab 1: Rendimiento — MetricCards + BarChart + Treemap
-  - [ ] Tab 2: RRG — RRGChart con selector de semanas
-  - [ ] Tab 3: Detalle sectorial — CandlestickChart por ETF + tabla componentes
+- [x] API Route: `GET /api/sectors/performance` — 11 ETFs SPDR vía Yahoo
+- [x] Implementar `src/lib/calculations/rrg.ts`:
+  - [x] JdK RS-Ratio y RS-Momentum para cada sector
+  - [x] Clasificación en 4 cuadrantes (Leading, Weakening, Lagging, Improving)
+- [x] API Route: `GET /api/sectors/rrg`
+- [x] Componente: `TreemapChart` (Recharts Treemap + colores dinámicos)
+- [x] Componente: `RRGChart` (D3 Scatter con trayectorias)
+- [x] Página Sectores (3 tabs):
+  - [x] Tab 1: Rendimiento — MetricCards + BarChart + Treemap
+  - [x] Tab 2: RRG — RRGChart con selector de semanas
+  - [x] Tab 3: Detalle sectorial — CandlestickChart por ETF + tabla componentes
 
 ```comentario
-RRG requiere cálculo secuencial: ratio ETF/SPY → EMA → RS-Ratio → RS-Momentum.
-Se necesitan mín. 12 semanas de datos históricos para trayectorias.
+RRG implementado con cálculo secuencial de RS-Ratio y RS-Momentum.
+TreemapChart y RRGChart integrados con datos reales de ETFs sectoriales.
+Pestaña de rendimiento muestra el heatmap de sectores con Treemap.
 ```
 
 ### Commodities
 
-- [ ] API Route: `GET /api/commodities`
-- [ ] Página Commodities:
-  - [ ] MetricCards (Oro, Plata, WTI, Brent, Gas, Cobre)
-  - [ ] CandlestickChart con selector de commodity
-  - [ ] MultiLineChart ratio Oro/Plata
-  - [ ] BarChart rendimientos comparativos
+- [x] API Route: `GET /api/commodities`
+- [x] Página Commodities:
+  - [x] MetricCards (Oro, Plata, WTI, Brent, Gas, Cobre)
+  - [x] CandlestickChart con selector de commodity
+  - [x] MultiLineChart ratio Oro/Plata
+  - [x] BarChart rendimientos comparativos
 
 ### Forex
 
-- [ ] API Route: `GET /api/forex`
-- [ ] Componente: `DataTable` (TanStack Table interactiva, ordenable, paginada)
-- [ ] Página Forex:
-  - [ ] MetricCards (EUR/USD, GBP/USD, USD/JPY, etc.)
-  - [ ] CandlestickChart con selector de par
-  - [ ] DataTable interactiva
-  - [ ] MultiLineChart DXY
+- [x] API Route: `GET /api/forex`
+- [x] Componente: `DataTable` (TanStack Table interactiva, ordenable, paginada)
+- [x] Página Forex:
+  - [x] MetricCards (EUR/USD, GBP/USD, USD/JPY, etc.)
+  - [x] CandlestickChart con selector de par
+  - [x] DataTable interactiva
+  - [x] MultiLineChart DXY
 
 ---
 

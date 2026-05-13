@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { RefreshCw, Sun, Moon, Search, Presentation } from 'lucide-react'
+import { RefreshCw, Sun, Moon, Search, Presentation, Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useTheme } from '@/hooks/use-theme'
 import { useUIStore } from '@/hooks/use-ui'
@@ -22,20 +22,30 @@ const tabs = [
 interface HeaderProps {
   onRefresh?: () => void
   isRefreshing?: boolean
+  onMenuClick?: () => void
 }
 
-export function Header({ onRefresh, isRefreshing }: HeaderProps) {
+export function Header({ onRefresh, isRefreshing, onMenuClick }: HeaderProps) {
   const pathname = usePathname()
   const { theme, toggleTheme } = useTheme()
   const { setSearchOpen, togglePresentation, presentationMode } = useUIStore()
 
   return (
-    <header className="flex h-14 items-center border-b bg-card px-4">
-      <Link href="/" className="mr-6 text-sm font-bold text-foreground shrink-0">
+    <header className="flex h-14 items-center border-b bg-card px-2 sm:px-4 gap-2">
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0 lg:hidden"
+        onClick={onMenuClick}
+      >
+        <Menu className="h-4 w-4" />
+      </Button>
+
+      <Link href="/" className="mr-2 sm:mr-6 text-sm font-bold text-foreground shrink-0 hidden sm:block">
         TradingDifferent
       </Link>
 
-      <nav className="flex flex-1 items-center gap-1 overflow-x-auto">
+      <nav className="flex flex-1 items-center gap-1 overflow-x-auto scrollbar-none">
         {tabs.map((tab) => {
           const isActive = pathname === tab.href
           return (
@@ -43,7 +53,7 @@ export function Header({ onRefresh, isRefreshing }: HeaderProps) {
               key={tab.href}
               href={tab.href}
               className={cn(
-                'whitespace-nowrap rounded px-3 py-1.5 text-xs font-medium transition-colors',
+                'whitespace-nowrap rounded px-2 sm:px-3 py-1.5 text-xs font-medium transition-colors',
                 isActive
                   ? 'bg-muted text-foreground'
                   : 'text-muted-foreground hover:text-foreground',
@@ -55,7 +65,7 @@ export function Header({ onRefresh, isRefreshing }: HeaderProps) {
         })}
       </nav>
 
-      <div className="flex items-center gap-1 shrink-0">
+      <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
         <Button
           variant="ghost"
           size="icon"
@@ -68,7 +78,7 @@ export function Header({ onRefresh, isRefreshing }: HeaderProps) {
         <Button
           variant={presentationMode ? 'secondary' : 'ghost'}
           size="icon"
-          className="h-8 w-8 text-muted-foreground hover:text-foreground"
+          className="h-8 w-8 text-muted-foreground hover:text-foreground hidden sm:inline-flex"
           onClick={togglePresentation}
           title={presentationMode ? 'Exit presentation' : 'Presentation mode'}
         >
@@ -88,6 +98,7 @@ export function Header({ onRefresh, isRefreshing }: HeaderProps) {
           size="icon"
           className="h-8 w-8 text-muted-foreground hover:text-foreground"
           onClick={toggleTheme}
+          title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
         >
           {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </Button>

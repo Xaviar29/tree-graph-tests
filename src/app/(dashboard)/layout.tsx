@@ -8,6 +8,10 @@ import { useUIStore } from '@/hooks/use-ui'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { AnimatePresence, motion } from 'framer-motion'
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import { Menu } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { useState } from 'react'
 
 export default function DashboardLayout({
   children,
@@ -16,17 +20,32 @@ export default function DashboardLayout({
 }) {
   const { presentationMode } = useUIStore()
   const pathname = usePathname()
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <div className={cn('transition-all duration-300', presentationMode ? 'w-0 overflow-hidden' : '')}>
+      {/* Desktop sidebar */}
+      <div className={cn(
+        'hidden lg:block transition-all duration-300',
+        presentationMode ? 'w-0 overflow-hidden' : '',
+      )}>
         <Sidebar />
       </div>
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <Header />
+
+      {/* Mobile sidebar (sheet) */}
+      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+        <SheetContent side="left" className="w-64 p-0 [&>button]:hidden" showCloseButton={false}>
+          <div className="pt-14">
+            <Sidebar />
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <div className="flex flex-1 flex-col overflow-hidden min-w-0">
+        <Header onMenuClick={() => setMobileOpen(true)} />
         <main className={cn(
           'flex-1 overflow-y-auto bg-background transition-all duration-300',
-          presentationMode ? 'p-6' : 'p-4',
+          presentationMode ? 'p-6' : 'p-2 sm:p-4',
         )}>
           <AnimatePresence mode="wait">
             <motion.div
