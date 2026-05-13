@@ -528,125 +528,300 @@ Rate limiting protege todas las API routes contra abuso (30 requests/30s por IP)
 
 ---
 
-## HERRAMIENTAS CONFIGURADAS
+---
+## SERVICIOS EXTERNOS CONFIGURADOS
 
-### Superpowers (Plugin OpenCode)
-- **Estado:** ✅ Instalado en `~/.config/opencode/node_modules/superpowers`
-- **Skills disponibles:** brainstorming, writing-plans, subagent-driven-development, executing-plans, TDD, code review, systematic-debugging, using-git-worktrees
-- **Uso:** Metodología de desarrollo con writing-plans para desglose de tareas, subagent-driven-development para ejecución paralela con revisión
+### 1. Vercel — Frontend + API Routes (Hosting)
+- **URL:** https://trading-dashboard-omega-lemon.vercel.app
+- **Dashboard:** https://vercel.com/javi-s-projects3/trading-dashboard
+- **Qué es:** Plataforma de hosting para Next.js. Build automático, CDN global, SSL, dominios custom.
+- **Deploy:** `vercel --prod` desde `trading-dashboard/` (o automático desde GitHub)
+- **API Key:** Configurada en variables de entorno del proyecto
+- **Monitoreo:** Vercel Analytics (Settings → Analytics, activar)
 
-### Playwright MCP
-- **Estado:** ✅ Configurado en `opencode.json`
-- **Comando:** `npx @playwright/mcp@latest`
-- **Uso:** Browser automation para E2E tests y análisis de tradingdifferent.com
+### 2. Upstash Redis — Caché Persistente + Rate Limiting
+- **URL:** https://console.upstash.com/redis/ (pro-perch-122650)
+- **Qué es:** Redis serverless en la nube. Sin conexión persistente, vía REST API.
+- **Uso en el proyecto:**
+  - `src/lib/cache.ts`: `getCachedOrFetch()` intenta Redis primero, fallback a Map en memoria
+  - `setCacheEntry()` escribe en Redis + memoria simultáneamente
+  - Keys con prefijo `td:` y TTL automático vía `setex`
+  - `withRateLimit()`: sliding window 30 req / 30s por IP en las 14 API routes
+- **Beneficio:** La AD Line y datos de breadth ya no se pierden al reiniciar el servidor
+- **Plan:** Gratuito (10MB, 10k requests/día)
+- **Env vars:** `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`
 
-### registry-directory-mcp
-- **Estado:** ✅ Instalado en `~/.config/opencode/registry-directory-mcp` (build local)
-- **Uso:** Búsqueda de componentes shadcn/ui en 40+ registros
+### 3. Supabase — Base de Datos (PostgreSQL)
+- **URL:** https://supabase.com/dashboard/projects
+- **Qué es:** PostgreSQL serverless con API REST. Alternativa open-source a Firebase.
+- **Uso en el proyecto:**
+  - Tabla `breadth_history`: persiste AD Line diaria (advancing, declining, net_advances, ad_line, oscillator, summation_index)
+  - `src/lib/supabase.ts`: client singleton con `getBreadthHistory()` y `upsertBreadthHistory()`
+  - La AD Line y McClellan Oscillator leen/escriben directamente de Supabase
+- **Beneficio:** Historial breadth sobrevive reinicios del servidor y se acumula día a día
+- **Plan:** Gratuito (500MB DB, 50k rows)
+- **Env vars:** `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+### 4. Sentry — Monitorización de Errores
+- **URL:** https://sentry.io/orgs/javi-s-projects3/
+- **Qué es:** Sistema de monitoreo que captura errores en producción con stack traces completos.
+- **Uso en el proyecto:**
+  - `sentry.client.config.ts`: init en cliente con `tracesSampleRate: 0.1`
+  - `sentry.server.config.ts`: init en servidor
+  - `sentry.edge.config.ts`: init en edge runtime
+  - `src/instrumentation.ts`: register hook para Next.js
+  - `next.config.ts`: wrapper con `withSentryConfig`
+  - Tunnel `/monitoring` para evitar adblockers
+  - Source maps ocultos en producción (seguridad)
+  - Automatic Vercel Monitors: alertas de rendimiento en dashboard de Vercel
+- **Plan:** Gratuito (5k eventos/mes)
+- **Env vars:** `SENTRY_DSN`, `SENTRY_API_KEY`
+- **Nota:** Para source maps y releases, se necesita un auth token de Sentry. Sin él, Sentry funciona pero no puede asociar errores a releases específicas.
+
+### 5. Railway — Python Worker (KDE Heatmap)
+- **URL:** https://railway.app/dashboard
+- **Qué es:** Plataforma de hosting para workers Python. Ideal para el KDE heatmap (scipy no corre en Vercel).
+- **Uso en el proyecto:** `python-workers/` con FastAPI + scipy
+- **Cómo deployar:**
+  1. Conectar repo `Xaviar29/tree-graph-tests` a Railway
+  2. Configurar root directory = `python-workers/`
+  3. Start command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
+  4. Railway te da una URL tipo `https://python-worker.up.railway.app`
+  5. Actualizar `PYTHON_WORKER` en `src/app/api/liquidations/heatmap/route.ts`
+- **Fallback:** Si el worker no responde, el heatmap usa un cálculo TS simplificado (grid bin-based)
+- **Plan:** ~$5 crédito inicial (gratis hasta耗尽)
+
+### 6. GitHub — Control de Versiones
+- **URL:** https://github.com/Xaviar29/tree-graph-tests
+- **Qué es:** Repositorio Git del proyecto completo.
+- **Estructura:** `trading-dashboard/` (Next.js) + `python-workers/` (Python)
+- **Token:** Configurado en variables de entorno del proyecto
 
 ---
 
-## NOTAS TÉCNICAS PARA PRÓXIMAS FASES
+## HERRAMIENTAS DE DESARROLLO
 
-### Decisiones de arquitectura
+### OpenCode + Superpowers
+- **OpenCode:** CLI interactivo para desarrollo asistido por IA
+- **Superpowers plugin:** `~/.config/opencode/node_modules/superpowers/`
+- **Skills disponibles:**
+  - `brainstorming` — Refinamiento de diseño mediante preguntas socráticas
+  - `writing-plans` — Creación de planes de implementación detallados
+  - `subagent-driven-development` — Subagentes con revisión en 2 etapas
+  - `executing-plans` — Ejecución por lotes con checkpoints
+  - `test-driven-development` — Ciclo RED-GREEN-REFACTOR
+  - `requesting-code-review` — Code review sistemático
+  - `verification-before-completion` — Verificación antes de dar por terminado
 
-1. **API Routes vs BFF separado**: Por ahora todo en Next.js Route Handlers. Si la carga crece, mover a Python workers.
-2. **Caché**: Map en memoria para desarrollo. Migrar a Upstash Redis en producción.
-3. **WebSocket**: No implementado aún. Binance WS para BTC/ETH en Sprint 4.
-4. **Base de datos**: Supabase pendiente de configurar (Sprint 5).
-5. **Concurrencia**: `getQuote()` usa `runWithConcurrency(..., 15)` para evitar rate limiting de Yahoo. Los arrays de 503 símbolos se dividen en batches de 15.
-6. **AD Line almacenada en caché**: Se persiste en `cache.ts` con key `breadth:ad-history` (7 días TTL). Cada día se añade un nuevo registro `{date, netAdvances, advancing, declining}`. Esto permite que la AD Line acumule entre requests y que McClellan tenga histórico.
+### Playwright MCP (Browser Automation)
+- **Estado:** Configurado en `opencode.json`
+- **Comando:** `npx @playwright/mcp@latest`
+- **Uso:** Tests E2E y scraping/interacción con sitios web
+- **Tests:** 10 tests E2E en `e2e/dashboard.spec.ts`
+- **Config:** `playwright.config.ts` con Chromium + webServer integrado
 
-### Problemas conocidos
+### registry-directory-mcp (shadcn Components)
+- **Estado:** Build local en `~/.config/opencode/registry-directory-mcp`
+- **Uso:** Búsqueda de componentes shadcn/ui en 40+ registros (Magic UI, Aceternity, etc.)
 
-1. **Yahoo Finance**: v7 quote endpoint bloqueado. Usar v8 chart endpoint como workaround.
-2. **CORS**: Las API routes de Next.js no tienen CORS configurado (no necesario para mismo dominio).
-3. **Rate limiting**: Sin límite de requests actualmente (implementar con Upstash antes de producción).
-4. **McClellan**: Necesita 39+ días de datos A/D para calcular oscilador. Empieza en 0 hasta que se acumule histórico en caché. Para producción: migrar a Supabase.
-5. **Put/Call ratio**: CBOE CSV puede fallar (CORS/bloqueo server-side). Fallback usa Yahoo `PCSC` (sin ^). Si ambos fallan, default 0.85.
-6. **Timestamps Yahoo**: La API v8 devuelve Unix timestamps en segundos. lightweight-charts v5 espera segundos. NO dividir por 1000.
-7. **Recarga del servidor**: La caché en memoria se pierde al reiniciar Next.js. Esto reinicia AD Line y McClellan.
-8. **Shimmer animation**: Animación CSS keyframe para loading states con gradient sweep 1.5s infinite. Definida en `globals.css` con clase `.shimmer`. Soporte dark mode.
-9. **Framer Motion layoutId**: Sidebar usa `motion.div layoutId="activeIndicator"` para animar indicador activo entre links con spring physics.
+---
 
-### Estructura de directorios creada
+## NOTAS TÉCNICAS ACTUALIZADAS
+
+### Arquitectura
+
+| Capa | Tecnología | Estado |
+|------|-----------|--------|
+| Frontend | Next.js 16 + Tailwind v4 + shadcn/ui | ✅ |
+| Estado cliente | TanStack Query v5 + Zustand v5 | ✅ |
+| Charts | lightweight-charts v5 + Recharts v3 | ✅ |
+| Caché | Upstash Redis (con fallback Map en memoria) | ✅ |
+| Rate limiting | @upstash/ratelimit (30 req/30s por IP) | ✅ |
+| DB persistente | Supabase (PostgreSQL) | ✅ |
+| Errores | Sentry | ✅ |
+| Hosting | Vercel | ✅ |
+| Worker Python | Railway (FastAPI + scipy) | Pendiente deploy |
+| Tests E2E | Playwright | ✅ (10 tests) |
+
+### Decisiones de arquitectura clave
+
+1. **Yahoo Finance v8**: El endpoint v7 quote está bloqueado (401). Se usa `query1.finance.yahoo.com/v8/finance/chart`, extrayendo cotización del `meta` y calculando change desde `chartPreviousClose`.
+
+2. **lightweight-charts v5 API**: Ya no existen `chart.addCandlestickSeries()`, `chart.addHistogramSeries()`, `chart.addLineSeries()`. Ahora se usa `chart.addSeries(CandlestickSeries, options)`, importando `CandlestickSeries`, `HistogramSeries`, `LineSeries` como valores.
+
+3. **shadcn v4 + Tailwind v4**: Usa OKLCH para colores, `@theme` para variables CSS, `@import "tailwindcss"` en lugar de directivas `@tailwind`. No hay `tailwind.config.ts` — la configuración va en `globals.css`.
+
+4. **Route groups**: `(dashboard)` agrupa páginas bajo un layout común sin afectar la URL. Así `/indices` usa el layout con Sidebar + Header.
+
+5. **Caché multi-capa**: `getCachedOrFetch()` intenta: Redis → Map en memoria → stale cache → fetcher. `withRateLimit()` usa Redis + Map como fallback.
+
+6. **Concurrencia Yahoo**: `getQuote()` usa `runWithConcurrency(..., 15)` para evitar rate limiting. Arrays de 503 símbolos divididos en batches de 15.
+
+7. **Binance WS**: WebSocket client singleton que se conecta bajo demanda. Buffer de 1000 eventos en memoria. Se pierde al reiniciar el servidor.
+
+### Problemas conocidos y soluciones
+
+1. **Yahoo Finance v7 bloqueado** — Solución: Usar v8 chart endpoint como workaround.
+2. **McClellan necesita 39+ días** — El oscilador empieza en 0 hasta que se acumule historial en Supabase.
+3. **Put/Call ratio CBOE** — CBOE CSV puede fallar. Fallback usa Yahoo `^PCSC`. Si ambos fallan, default 0.85.
+4. **Timestamps Yahoo v8** — Devuelve Unix timestamps en segundos. lightweight-charts v5 espera segundos. NO dividir por 1000.
+5. **Binance WS se pierde al reiniciar** — El buffer de liquidaciones es en memoria. Para producir: migrar a cola Redis.
+6. **CNN Fear & Greed inestable** — Endpoint CNN puede fallar. Fallback propio calcula con momentum S&P vs SMA125, safe haven SPY vs TLT, y VIX inverso.
+7. **Sentry auth token** — Sin auth token, Sentry no sube source maps ni crea releases. Funciona pero pierde trazabilidad.
+
+### Para producción futura
+
+| Tarea | Prioridad | Dependencia |
+|-------|-----------|-------------|
+| Deploy Python worker en Railway | Baja | Cuenta Railway |
+| Configurar Sentry auth token | Baja | Token de Sentry |
+| Dominio custom (tradingdifferent.com) | Baja | DNS + Vercel |
+| Migrar Binance buffer a Redis | Media | Upstash Redis ya listo |
+
+---
+
+## ESTRUCTURA COMPLETA DEL PROYECTO
 
 ```
-trading-dashboard/
-├── src/
-│   ├── app/
-│   │   ├── layout.tsx                    # Root layout
-│   │   ├── globals.css                   # Tailwind v4 + shadcn
-│   │   ├── (dashboard)/
-│   │   │   ├── layout.tsx                # Sidebar + Header
-│   │   │   ├── page.tsx                  # Redirect a /indices
-│   │   │   ├── indices/page.tsx          # Sprint 1: Página índices
-│   │   │   ├── breadth/page.tsx          # Sprint 2: Página Amplitud
-│   │   │   └── sentiment/page.tsx        # Sprint 2: Página Sentimiento
-│   │   └── api/
-│   │       ├── market/
-│   │       │   ├── quote/route.ts        # Sprint 1
-│   │       │   └── historical/route.ts   # Sprint 1
-│   │       ├── breadth/
-│   │       │   ├── advance-decline/route.ts  # Sprint 2
-│   │       │   ├── mcclellan/route.ts        # Sprint 2
-│   │       │   ├── above-ma/route.ts         # Sprint 2
-│   │       │   └── new-highs-lows/route.ts   # Sprint 2
-│   │       └── sentiment/
-│   │           ├── fear-greed/route.ts   # Sprint 2
-│   │           ├── vix/route.ts          # Sprint 2
-│   │           └── put-call/route.ts     # Sprint 2
-│   ├── components/
-│   │   ├── charts/
-│   │   │   ├── chart-wrapper.tsx         # Sprint 1 (mejorado: quick stats, legend, change badge)
-│   │   │   ├── candlestick-chart.tsx     # Sprint 1 (fix timestamp)
-│   │   │   ├── sparkline.tsx             # Sprint 1
-│   │   │   └── gauge-chart.tsx           # Sprint 2
-│   │   ├── dashboard/
-│   │   │   ├── sidebar.tsx               # Sprint 1+2 (fix rutas + animaciones)
-│   │   │   ├── header.tsx                # Sprint 1
-│   │   │   ├── metric-card.tsx           # Sprint 1 (mejorado: sparklines, sesión, 52W, hover)
-│   │   │   ├── market-overview-strip.tsx # Sprint 1 (NUEVO: VIX, F&G, sesión)
-│   │   │   ├── timeframe-selector.tsx    # Sprint 1
-│   │   │   └── last-updated.tsx          # Sprint 1
-│   │   ├── shared/
-│   │   │   ├── query-provider.tsx        # Sprint 1
-│   │   │   ├── loading-skeleton.tsx      # Sprint 1
-│   │   │   ├── shimmer-skeleton.tsx      # Sprint 1 (NUEVO: animación shimmer)
-│   │   │   ├── error-state.tsx           # Sprint 1
-│   │   │   └── export-button.tsx         # Sprint 1
-│   │   └── ui/                           # shadcn/ui (12 componentes)
-│   ├── hooks/
-│   │   ├── use-market-quote.ts           # Sprint 1
-│   │   ├── use-market-historical.ts      # Sprint 1
-│   │   ├── use-realtime.ts               # Sprint 1
-│   │   ├── use-theme.ts                  # Sprint 1
-│   │   ├── use-breadth.ts                # Sprint 2
-│   │   └── use-sentiment.ts              # Sprint 2
-│   ├── lib/
-│   │   ├── cache.ts                      # Sprint 1+2 (get/setCacheEntry)
-│   │   ├── constants.ts                  # Sprint 1
-│   │   ├── utils.ts                      # Sprint 1
-│   │   ├── calculations/
-│   │   │   ├── breadth.ts                # Sprint 2 (A/D, %MA, NH/NL)
-│   │   │   └── mcclellan.ts              # Sprint 2 (Oscilador, SI)
-│   │   └── providers/
-│   │       ├── yahoo-finance.ts          # Sprint 1+2 (concurrency)
-│   │       ├── cnn-fear-greed.ts         # Sprint 2
-│   │       ├── cboe.ts                   # Sprint 2 (fix PCSC)
-│   │       └── vix.ts                    # Sprint 2
-│   ├── data/
-│   │   └── sp500-symbols.json           # Sprint 2 (503 tickers)
-│   └── types/
-│       ├── market.types.ts               # Sprint 1
-│       ├── api.types.ts                  # Sprint 1
-│       ├── breadth.types.ts              # Sprint 2
-│       └── sentiment.types.ts            # Sprint 2
-├── scripts/
-│   └── fetch-sp500.mjs                  # Sprint 2 (scraper Wikipedia)
-├── planning.md                           # ← Este archivo
-├── next.config.ts
+trading-dashboard/                          ← Proyecto Next.js
+├── .env.local                              ← Credenciales (NO subir a git)
+├── .gitignore
+├── AGENTS.md                               ← Contexto para asistentes IA
+├── components.json                         ← Config shadcn
+├── next.config.ts                          ← Next.js + Sentry wrapper
 ├── package.json
-├── tsconfig.json
-└── .env.local
+├── playwright.config.ts                    ← Config E2E tests
+├── planning.md                             ← Este archivo
+├── vercel.json                             ← Config Vercel deploy
+├── sentry.client.config.ts                 ← Sentry client-side
+├── sentry.server.config.ts                 ← Sentry server-side
+├── sentry.edge.config.ts                   ← Sentry edge runtime
+│
+├── e2e/                                    ← Playwright E2E tests
+│   └── dashboard.spec.ts                   ← 10 tests funcionales
+│
+├── python-workers/                         ← Worker Python (Railway)
+│   ├── main.py                             ← FastAPI app (puerto 8001)
+│   ├── requirements.txt                    ← fastapi, uvicorn, numpy, scipy
+│   └── routers/
+│       └── liquidation_heatmap.py          ← KDE endpoint POST /heatmap
+│
+├── scripts/
+│   └── fetch-sp500.mjs                     ← Scraper Wikipedia S&P 500
+│
+└── src/
+    ├── instrumentation.ts                  ← Sentry register hook
+    ├── app/
+    │   ├── globals.css                     ← Tailwind v4 + shadcn
+    │   ├── layout.tsx                      ← Root layout (QueryProvider, TooltipProvider)
+    │   │
+    │   ├── (dashboard)/                    ← Route group (Sidebar + Header layout)
+    │   │   ├── layout.tsx                  ← Dashboard layout (sidebar, search, alerts)
+    │   │   ├── page.tsx                    ← Redirect a /indices
+    │   │   ├── indices/page.tsx            ← Índices con candlestick charts
+    │   │   ├── breadth/page.tsx            ← Amplitud (AD, McClellan, %MA, NH/NL)
+    │   │   ├── sentiment/page.tsx          ← Sentimiento (F&G, VIX, Put/Call)
+    │   │   ├── sectors/page.tsx            ← Sectores (RRG, treemap, rendimiento)
+    │   │   ├── commodities/page.tsx        ← Commodities
+    │   │   ├── forex/page.tsx              ← Forex
+    │   │   ├── crypto/page.tsx             ← Crypto (3 tabs: Overview, Dominance, Liquidations)
+    │   │   ├── liquidations/page.tsx       ← Liquidation Heatmap
+    │   │   └── api/                        ← API routes heredadas del template
+    │   │       ├── commodities/route.ts
+    │   │       ├── sectors/performance/route.ts
+    │   │       └── sectors/rrg/route.ts
+    │   │
+    │   └── api/                            ← API Routes oficiales
+    │       ├── market/
+    │       │   ├── quote/route.ts          ← Cotizaciones batch Yahoo Finance
+    │       │   └── historical/route.ts     ← OHLCV histórico
+    │       ├── breadth/
+    │       │   ├── advance-decline/route.ts ← A/D desde Supabase
+    │       │   ├── mcclellan/route.ts      ← Oscilador desde Supabase
+    │       │   ├── above-ma/route.ts       ← % sobre SMA50/SMA200
+    │       │   └── new-highs-lows/route.ts ← NH/NL
+    │       ├── sentiment/
+    │       │   ├── fear-greed/route.ts     ← CNN + fallback propio
+    │       │   ├── vix/route.ts            ← Cotización VIX
+    │       │   └── put-call/route.ts       ← CBOE CSV + fallback ^PCSC
+    │       ├── crypto/
+    │       │   └── route.ts                ← CoinGecko (markets/historical/global)
+    │       └── liquidations/
+    │           ├── recent/route.ts         ← Últimas liquidationes Binance WS
+    │           ├── summary/route.ts        ← Resumen 24h
+    │           ├── hourly/route.ts         ← Agregación por hora
+    │           └── heatmap/route.ts        ← KDE heatmap (proxy Python + fallback TS)
+    │
+    ├── components/
+    │   ├── charts/
+    │   │   ├── chart-wrapper.tsx           ← HOC con loading/error/export/source
+    │   │   ├── candlestick-chart.tsx       ← lightweight-charts v5
+    │   │   ├── sparkline.tsx               ← Recharts mini sparkline
+    │   │   ├── gauge-chart.tsx             ← SVG gauge 180° con tick marks
+    │   │   ├── liquidation-heatmap.tsx     ← Canvas 2D heatmap
+    │   │   ├── rrg-chart.tsx              ← D3 RRG scatter (placeholder)
+    │   │   └── treemap-chart.tsx          ← Recharts treemap (placeholder)
+    │   ├── crypto/
+    │   │   └── crypto-table.tsx           ← TanStack Table ordenable + paginada
+    │   ├── dashboard/
+    │   │   ├── sidebar.tsx                ← Nav colapsable + tooltips
+    │   │   ├── header.tsx                 ← Tabs + search + theme + presentation
+    │   │   ├── metric-card.tsx            ← Card con sparkline + 52W + sesión
+    │   │   ├── market-overview-strip.tsx   ← Sesión, VIX, F&G
+    │   │   ├── timeframe-selector.tsx     ← Tabs 1D/5D/1M/3M/6M/1Y/5Y
+    │   │   └── last-updated.tsx           ← Timestamp HH:mm:ss
+    │   ├── shared/
+    │   │   ├── query-provider.tsx         ← TanStack Query v5
+    │   │   ├── loading-skeleton.tsx       ← Skeleton wrapper
+    │   │   ├── shimmer-skeleton.tsx       ← Shimmer animation
+    │   │   ├── error-state.tsx            ← Error + retry
+    │   │   ├── export-button.tsx          ← PNG/CSV con html-to-image
+    │   │   ├── global-search.tsx          ← Command palette (Ctrl+K)
+    │   │   └── alert-engine.tsx           ← Evalúa alertas vs datos reales
+    │   └── ui/                            ← shadcn/ui (19 componentes)
+    │
+    ├── hooks/
+    │   ├── use-market-quote.ts            ← Polling 60s
+    │   ├── use-market-historical.ts       ← Polling 300s
+    │   ├── use-realtime.ts                ← Hook genérico polling
+    │   ├── use-theme.ts                   ← Dark/light localStorage
+    │   ├── use-breadth.ts                 ← 5 queries breadth
+    │   ├── use-sentiment.ts               ← 3 queries sentimiento
+    │   ├── use-crypto.ts                  ← 3 queries CoinGecko
+    │   ├── use-liquidations.ts            ← 4 queries Binance WS
+    │   ├── use-sectors.ts                 ← Sectores (placeholder)
+    │   ├── use-commodities.ts             ← Commodities (placeholder)
+    │   ├── use-forex.ts                   ← Forex (placeholder)
+    │   ├── use-ui.ts                      ← Zustand: presentation mode + search
+    │   ├── use-alerts.ts                  ← Zustand + persist: alert rules
+    │   └── use-watchlist.ts              ← Zustand + persist: watchlist
+    │
+    ├── lib/
+    │   ├── cache.ts                       ← Redis + Map + rate limiting
+    │   ├── constants.ts                   ← Símbolos, TTLs, colores
+    │   ├── supabase.ts                    ← Cliente Supabase + helpers
+    │   ├── utils.ts                       ← cn(), formatPrice(), etc.
+    │   ├── calculations/
+    │   │   ├── breadth.ts                ← A/D, %MA, NH/NL
+    │   │   ├── mcclellan.ts              ← Oscilador + Summation Index
+    │   │   └── rrg.ts                    ← RS-Ratio + RS-Momentum
+    │   └── providers/
+    │       ├── yahoo-finance.ts           ← Yahoo Finance v8
+    │       ├── cnn-fear-greed.ts          ← CNN + fallback propio
+    │       ├── cboe.ts                    ← CBOE CSV + fallback ^PCSC
+    │       ├── vix.ts                     ← Cotización VIX
+    │       ├── coingecko.ts              ← CoinGecko API
+    │       └── binance-ws.ts             ← Binance fstream WebSocket
+    │
+    ├── data/
+    │   ├── sp500-symbols.json            ← 503 tickers S&P 500
+    │   └── crypto-ids.json               ← 50 CoinGecko mappings
+    │
+    └── types/
+        ├── api.types.ts                   ← ApiResponse<T>
+        ├── market.types.ts                ← Quote, OHLCV
+        ├── breadth.types.ts               ← BreadthData, McClellanData
+        ├── sentiment.types.ts             ← FearGreed, PutCall, Vix
+        ├── crypto.types.ts                ← CryptoMarket, CryptoGlobal
+        └── sectors.types.ts              ← SectorInfo, SectorRRG
 ```
