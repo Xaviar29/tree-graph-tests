@@ -1,4 +1,5 @@
 import type { Quote, OHLCV } from '@/types/market.types'
+import * as alpaca from './alpaca-markets'
 
 const YAHOO_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
@@ -133,38 +134,44 @@ async function runWithConcurrency<T>(
 }
 
 export async function getQuote(symbols: string[]): Promise<Quote[]> {
-  const chartResults = await runWithConcurrency(symbols, (s) => fetchChart(s, '1d', '1d'), 15)
+  try {
+    const chartResults = await runWithConcurrency(symbols, (s) => fetchChart(s, '1d', '1d'), 15)
 
-  const quoteMap = new Map<string, Quote>()
+    const quoteMap = new Map<string, Quote>()
 
-  for (const chart of chartResults) {
-    const result = chart.result?.[0]
-    if (!result) continue
-    const symbol = result.meta.symbol
-    quoteMap.set(symbol, parseQuoteFromMeta(symbol, result.meta, chart.result))
-  }
-
-  return symbols.map((symbol) => {
-    const q = quoteMap.get(symbol)
-    if (!q) {
-      return {
-        symbol,
-        name: symbol,
-        price: 0,
-        change: 0,
-        changePercent: 0,
-        volume: 0,
-        previousClose: 0,
-        open: 0,
-        dayHigh: 0,
-        dayLow: 0,
-        week52High: 0,
-        week52Low: 0,
-        marketState: 'CLOSED' as const,
-      }
+    for (const chart of chartResults) {
+      const result = chart.result?.[0]
+      if (!result) continue
+      const symbol = result.meta.symbol
+      quoteMap.set(symbol, parseQuoteFromMeta(symbol, result.meta, chart.result))
     }
-    return q
-  })
+
+    const quotes = symbols.map((symbol) => {
+      const q = quoteMap.get(symbol)
+      if (!q) {
+        return {
+          symbol,
+          name: symbol,
+          price: 0,
+          change: 0,
+          changePercent: 0,
+          volume: 0,
+          previousClose: 0,
+          open: 0,
+          dayHigh: 0,
+          dayLow: 0,
+          week52High: 0,
+          week52Low: 0,
+          marketState: 'CLOSED' as const,
+        }
+      }
+      return q
+    })
+
+    return quotes
+  } catch {
+    return alpaca.getQuote(symbols)
+  }
 }
 
 export async function getHistorical(
@@ -172,8 +179,12 @@ export async function getHistorical(
   range: string = '1y',
   interval: string = '1d',
 ): Promise<OHLCV[]> {
-  const chart = await fetchChart(symbol, range, interval)
-  return parseChartData(chart)
+  try {
+    const chart = await fetchChart(symbol, range, interval)
+    return parseChartData(chart)
+  } catch {
+    return alpaca.getBars(symbol, range, interval)
+  }
 }
 
 function parseChartData(chart: YahooChartResult['chart']): OHLCV[] {

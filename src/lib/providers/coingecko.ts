@@ -1,7 +1,31 @@
 import type { CryptoMarket, CryptoGlobal, CryptoHistorical } from '@/types/crypto.types'
+import { getCryptoBars } from './alpaca-markets'
 
 const BASE = 'https://api.coingecko.com/api/v3'
 const HEADERS = { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0' }
+
+const ALPACA_CRYPTO_MAP: Record<string, string> = {
+  bitcoin: 'BTCUSD',
+  ethereum: 'ETHUSD',
+  litecoin: 'LTCUSD',
+  'bitcoin-cash': 'BCHUSD',
+  usd: 'USD',
+  tether: 'USDTUSD',
+}
+
+function daysToAlpacaTimeframe(days: number): string {
+  if (days <= 1) return '1Min'
+  if (days <= 7) return '15Min'
+  if (days <= 30) return '1Hour'
+  return '1Day'
+}
+
+function daysToLimit(days: number): number {
+  if (days <= 1) return 390
+  if (days <= 7) return 672
+  if (days <= 30) return 720
+  return Math.min(days, 1000)
+}
 
 export async function getCryptoMarkets(limit = 50): Promise<CryptoMarket[]> {
   const res = await fetch(
@@ -20,6 +44,26 @@ export async function getCryptoMarkets(limit = 50): Promise<CryptoMarket[]> {
 }
 
 export async function getCryptoHistorical(id: string, days: number): Promise<CryptoHistorical[]> {
+  const alpacaSymbol = ALPACA_CRYPTO_MAP[id]
+  if (alpacaSymbol) {
+    try {
+      const timeframe = daysToAlpacaTimeframe(days)
+      const limit = daysToLimit(days)
+      const bars = await getCryptoBars(alpacaSymbol, timeframe, limit)
+      if (bars.length > 0) {
+        return bars.map((b) => ({
+          timestamp: b.timestamp * 1000,
+          open: b.open,
+          high: b.high,
+          low: b.low,
+          close: b.close,
+        }))
+      }
+    } catch {
+      // fallback to CoinGecko
+    }
+  }
+
   const res = await fetch(
     `${BASE}/coins/${id}/ohlc?vs_currency=usd&days=${days}`,
     { headers: HEADERS, next: { revalidate: 300 } },
