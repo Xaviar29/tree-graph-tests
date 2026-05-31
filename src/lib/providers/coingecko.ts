@@ -40,6 +40,10 @@ export async function getCryptoMarkets(limit = 50): Promise<CryptoMarket[]> {
     priceChange24h: c.price_change_24h ?? 0, priceChangePercent24h: c.price_change_percentage_24h ?? 0,
     sparkline7d: c.sparkline_in_7d?.price ?? [],
     image: c.image,
+    athPrice: c.ath, athDate: c.ath_date, athPercentage: c.ath_percentage,
+    athMarketCap: c.ath_market_cap ?? c.market_cap,
+    athSupply: c.ath_supply,
+    maxSupply: c.max_supply, circulatingSupply: c.circulating_supply, totalSupply: c.total_supply,
   }))
 }
 
