@@ -45,7 +45,7 @@ export default function SectorsPage() {
     name: item.sector.name,
     symbol: item.sector.symbol,
     size: item.weight,
-    value: item.quote.changePercent,
+    changePct: item.quote.changePercent,
     fill: item.sector.color,
   })) || []
 
@@ -72,7 +72,7 @@ export default function SectorsPage() {
             <CardHeader>
               <CardTitle>Mapa de Calor Sectorial</CardTitle>
               <CardDescription>
-                Tamaño de los bloques basado en el peso aproximado dentro del S&P 500.
+                Rendimiento intradía de los 11 sectores del S&P 500. El color y la intensidad reflejan la ganancia o pérdida del día de hoy. El tamaño del bloque representa el peso aproximado dentro del índice.
               </CardDescription>
             </CardHeader>
             <CardContent>
