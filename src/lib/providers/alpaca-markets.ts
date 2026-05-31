@@ -111,6 +111,39 @@ export async function getQuote(symbols: string[]): Promise<Quote[]> {
   })
 }
 
+interface OrderbookLevel {
+  price: number
+  volume: number
+}
+
+interface Orderbook {
+  bids: OrderbookLevel[]
+  asks: OrderbookLevel[]
+}
+
+export async function getCryptoOrderbook(symbol: string = 'BTCUSD'): Promise<Orderbook | null> {
+  if (!isConfigured()) return null
+
+  const url = `${APCA_DATA_URL}/crypto/${symbol}/orderbook`
+  const res = await fetch(url, { headers: headers() })
+  if (!res.ok) return null
+
+  const data = await res.json()
+  const bids: OrderbookLevel[] = (data.bids || []).map((b: any) => ({
+    price: parseFloat(b.p),
+    volume: parseFloat(b.s),
+  }))
+  const asks: OrderbookLevel[] = (data.asks || []).map((a: any) => ({
+    price: parseFloat(a.p),
+    volume: parseFloat(a.s),
+  }))
+
+  return {
+    bids: bids.sort((a, b) => b.price - a.price),
+    asks: asks.sort((a, b) => a.price - b.price),
+  }
+}
+
 function alpacaTimeframe(range: string, interval: string): string {
   if (interval === '1d' || interval === '1D') return '1Day'
   if (interval === '1wk') return '1Week'
