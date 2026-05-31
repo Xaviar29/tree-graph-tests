@@ -48,17 +48,26 @@ async function fetchSnapshots(symbols: string[]): Promise<Map<string, AlpacaSnap
   const stockSymbols = symbols.filter(canFallback)
   if (stockSymbols.length === 0) return new Map()
 
-  const url = `${APCA_DATA_URL}/stocks/snapshots?symbols=${stockSymbols.join(',')}`
-  const res = await fetch(url, { headers: headers() })
-
-  if (!res.ok) return new Map()
-
-  const data = await res.json()
   const map = new Map<string, AlpacaSnapshot>()
+  const BATCH_SIZE = 100
 
-  for (const symbol of stockSymbols) {
-    if (data[symbol]) {
-      map.set(symbol, { symbol, ...data[symbol] })
+  for (let i = 0; i < stockSymbols.length; i += BATCH_SIZE) {
+    const batch = stockSymbols.slice(i, i + BATCH_SIZE)
+    const url = `${APCA_DATA_URL}/stocks/snapshots?symbols=${batch.join(',')}`
+    try {
+      const res = await fetch(url, { headers: headers() })
+      if (!res.ok) continue
+      const data = await res.json()
+      for (const symbol of batch) {
+        if (data[symbol]) {
+          map.set(symbol, { symbol, ...data[symbol] })
+        }
+      }
+    } catch {
+      continue
+    }
+    if (i + BATCH_SIZE < stockSymbols.length) {
+      await new Promise((r) => setTimeout(r, 200))
     }
   }
 
