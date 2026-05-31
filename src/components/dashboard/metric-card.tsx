@@ -77,11 +77,12 @@ export function MetricCard({
     >
       <div
         className={cn(
-          'relative rounded-xl border bg-card p-4 cursor-pointer',
+          'relative rounded-xl bg-card p-4 cursor-pointer',
           'transition-all duration-200 ease-out',
           'hover:scale-[1.02] hover:shadow-lg hover:shadow-foreground/5',
-          isSelected ? '!border-l-[7px] !border-primary shadow-lg shadow-primary/20' : `border-l-[3px] ${accentColor}`,
-          !isSelected && 'hover:border-foreground/20',
+          isSelected
+            ? 'border-[3px] border-primary bg-primary/[0.07] shadow-lg shadow-primary/25'
+            : `border border-l-[3px] ${accentColor} hover:border-foreground/20`,
         )}
         onClick={onClick}
       >

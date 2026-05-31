@@ -170,7 +170,7 @@ export default function IndicesPage() {
                 showVolume
                 showSMA
                 height={440}
-                symbol={selectedSymbol}
+                symbol={INDEX_LABELS[selectedSymbol] || selectedSymbol}
               />
             ) : (
               <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
