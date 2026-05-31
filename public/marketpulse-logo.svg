@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 50" fill="none">
+  <path d="M5 35 L30 35 L40 20 L55 20 L65 35 L80 35 L90 15 L105 15 L115 30 L130 30 L140 10 L155 10 L165 25 L180 25 L190 15 L195 15" 
+        stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="102" y="8" width="3" height="6" fill="#10b981" rx="1" transform="rotate(180 103 11)"/>
+  <rect x="137" y="3" width="3" height="12" fill="#10b981" rx="1" transform="rotate(180 138 9)"/>
+  <text x="5" y="15" fill="#0f172a" font-family="Inter,sans-serif" font-weight="700" font-size="14">MarketPulse</text>
+</svg>

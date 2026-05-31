@@ -80,9 +80,7 @@ export function MetricCard({
           'relative rounded-xl border bg-card p-4 cursor-pointer',
           'transition-all duration-200 ease-out',
           'hover:scale-[1.02] hover:shadow-lg hover:shadow-foreground/5',
-          'border-l-[3px]',
-          accentColor,
-          isSelected && 'ring-2 ring-primary/50 shadow-lg',
+          isSelected ? '!border-l-[7px] !border-primary shadow-lg shadow-primary/20' : `border-l-[3px] ${accentColor}`,
           !isSelected && 'hover:border-foreground/20',
         )}
         onClick={onClick}
@@ -141,6 +139,10 @@ export function MetricCard({
                     }}
                   />
                 </div>
+                <div className="flex justify-between text-[11px] font-mono">
+                  <span className="text-loss">{low52w.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  <span className="text-gain">{high52w.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
               </div>
             )}
 
@@ -155,7 +157,7 @@ export function MetricCard({
           </div>
 
           {sparklineData && sparklineData.length > 0 && (
-            <div className="shrink-0">
+            <div className="shrink-0 w-24">
               <Sparkline data={sparklineData} height={40} />
             </div>
           )}

@@ -9,14 +9,15 @@ import { useUIStore } from '@/hooks/use-ui'
 import { cn } from '@/lib/utils'
 
 const tabs = [
+  { href: '/crypto', label: 'Crypto' },
+  { href: '/onfire', label: 'On Fire' },
+  { href: '/liquidations', label: 'Liquidations' },
   { href: '/indices', label: 'Indices' },
   { href: '/breadth', label: 'Breadth' },
   { href: '/sentiment', label: 'Sentiment' },
   { href: '/sectors', label: 'Sectors' },
   { href: '/commodities', label: 'Commodities' },
   { href: '/forex', label: 'Forex' },
-  { href: '/crypto', label: 'Crypto' },
-  { href: '/liquidations', label: 'Liquidations' },
 ]
 
 interface HeaderProps {
@@ -41,8 +42,9 @@ export function Header({ onRefresh, isRefreshing, onMenuClick }: HeaderProps) {
         <Menu className="h-4 w-4" />
       </Button>
 
-      <Link href="/" className="mr-2 sm:mr-6 text-sm font-bold text-foreground shrink-0 hidden sm:block">
-        TradingDifferent
+      <Link href="/" className="mr-2 sm:mr-6 flex items-center gap-2 text-sm font-bold text-foreground shrink-0 hidden sm:flex">
+        <img src={theme === 'dark' ? '/marketpulse-dark.png' : '/marketpulse.png'} alt="" className="h-5 w-5" />
+        MarketPulse
       </Link>
 
       <nav className="flex flex-1 items-center gap-1 overflow-x-auto scrollbar-none">

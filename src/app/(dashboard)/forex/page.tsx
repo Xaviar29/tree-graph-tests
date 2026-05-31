@@ -18,7 +18,11 @@ const columns: ColumnDef<Quote>[] = [
   {
     accessorKey: 'symbol',
     header: 'Símbolo',
-    cell: ({ row }) => <div className="text-muted-foreground">{row.getValue('symbol')}</div>,
+    cell: ({ row }) => {
+      const sym = row.getValue('symbol') as string
+      const cleaned = sym.replace('=X', '').replace('-NYB', '')
+      return <div className="text-muted-foreground">{cleaned}</div>
+    },
   },
   {
     accessorKey: 'price',

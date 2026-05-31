@@ -79,7 +79,7 @@ export function GaugeChart({
 
   return (
     <div className={`flex flex-col items-center ${className ?? ''}`}>
-      <svg width={size} height={size * 0.82} viewBox={`0 0 ${size} ${size * 0.82}`}>
+      <svg width={size} height={size * 0.85} viewBox={`-10 -5 ${size + 20} ${size * 0.82 + 15}`}>
         <defs>
           <linearGradient id="gauge-fill" x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stopColor="#FF4757" />

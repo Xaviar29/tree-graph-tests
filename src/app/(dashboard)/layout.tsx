@@ -2,7 +2,6 @@
 
 import { Sidebar } from '@/components/dashboard/sidebar'
 import { Header } from '@/components/dashboard/header'
-import { BottomNav } from '@/components/dashboard/bottom-nav'
 import { GlobalSearch } from '@/components/shared/global-search'
 import { AlertEngine } from '@/components/shared/alert-engine'
 import { useUIStore } from '@/hooks/use-ui'
@@ -63,7 +62,6 @@ export default function DashboardLayout({
       </div>
       <GlobalSearch />
       <AlertEngine />
-      <BottomNav onMenuClick={() => setMobileOpen(true)} />
     </div>
   )
 }

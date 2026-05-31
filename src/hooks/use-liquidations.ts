@@ -14,8 +14,13 @@ interface HourlyData {
 
 interface KDEResult { grid: number[][]; price_bins: number[]; notional_bins: number[] }
 
-async function fetchRecent(symbol: string): Promise<LiquidationEvent[]> {
-  const res = await fetch(`/api/liquidations/recent?symbol=${symbol}&limit=50`)
+interface ExchangeStatus {
+  binance: { connected: boolean; count: number }
+  bybit: { connected: boolean; count: number }
+}
+
+async function fetchRecent(symbol: string, exchange = 'all'): Promise<LiquidationEvent[]> {
+  const res = await fetch(`/api/liquidations/recent?symbol=${symbol}&limit=50&exchange=${exchange}`)
   const json: ApiResponse<LiquidationEvent[]> = await res.json()
   if (!json.success) throw new Error('Failed to fetch recent liquidations')
   return json.data ?? []
@@ -42,10 +47,17 @@ async function fetchHeatmap(symbol: string): Promise<KDEResult | null> {
   return json.data ?? null
 }
 
-export function useLiquidationsRecent(symbol = 'BTCUSDT') {
+async function fetchExchangeStatus(): Promise<ExchangeStatus | null> {
+  const res = await fetch('/api/liquidations/exchanges')
+  const json: ApiResponse<ExchangeStatus> = await res.json()
+  if (!json.success) throw new Error('Failed to fetch exchange status')
+  return json.data ?? null
+}
+
+export function useLiquidationsRecent(symbol = 'BTCUSDT', exchange = 'all') {
   return useQuery({
-    queryKey: ['liquidations', 'recent', symbol],
-    queryFn: () => fetchRecent(symbol),
+    queryKey: ['liquidations', 'recent', symbol, exchange],
+    queryFn: () => fetchRecent(symbol, exchange),
     refetchInterval: 5_000,
     staleTime: 3_000,
   })
@@ -75,5 +87,14 @@ export function useLiquidationHeatmap(symbol = 'BTCUSDT') {
     queryFn: () => fetchHeatmap(symbol),
     refetchInterval: 30_000,
     staleTime: 15_000,
+  })
+}
+
+export function useExchangeStatus() {
+  return useQuery({
+    queryKey: ['liquidations', 'exchanges'],
+    queryFn: fetchExchangeStatus,
+    refetchInterval: 10_000,
+    staleTime: 5_000,
   })
 }

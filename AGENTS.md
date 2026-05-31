@@ -5,7 +5,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # MARKETPULSE — GUÍA PARA AGENTS
 
-> **PROYECTO PRINCIPAL.** Salvo que se indique lo contrario, todo el trabajo se realiza sobre este proyecto. `trading-dashboard/` es un proyecto legacy/archivado.
+> **⚠️ PROYECTO ACTUAL = MarketPulse.** Cuando digamos «el proyecto», «el repo», «la app» o «MarketPulse» nos referimos SIEMPRE a este directorio (`MarketPulse/`). `trading-dashboard/` es un proyecto legacy/archivado — NO tocar ni confundir.
 
 ## Stack
 - Next.js 16.2.6 + TypeScript + Tailwind v4 + shadcn/ui

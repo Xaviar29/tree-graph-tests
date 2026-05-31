@@ -12,62 +12,27 @@ import { toPng } from 'html-to-image'
 import { Tooltip as ShadcnTooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
 interface QuickStats {
-  open: number
-  high: number
-  low: number
-  change: number
-  changePercent: number
+  open: number; high: number; low: number; change: number; changePercent: number
 }
 
 interface LegendItem {
-  label: string
-  color: string
-  visible?: boolean
+  label: string; color: string; visible?: boolean
 }
 
 interface ChartWrapperProps {
-  title: string
-  subtitle?: string
-  isLoading?: boolean
-  error?: Error | null
-  lastUpdated?: Date
-  timeframes?: string[]
-  activeTimeframe?: string
-  onTimeframeChange?: (tf: string) => void
-  exportable?: boolean
-  children: React.ReactNode
-  className?: string
-  height?: number
-  onRetry?: () => void
-  quickStats?: QuickStats
-  legendItems?: LegendItem[]
-  dataSource?: string
-  hint?: string
-  onExportCSV?: () => void
+  title: string; subtitle?: string; isLoading?: boolean; error?: Error | null
+  lastUpdated?: Date; timeframes?: string[]; activeTimeframe?: string
+  onTimeframeChange?: (tf: string) => void; exportable?: boolean
+  children: React.ReactNode; className?: string; height?: number; onRetry?: () => void
+  quickStats?: QuickStats; legendItems?: LegendItem[]; dataSource?: string; hint?: string; onExportCSV?: () => void
 }
 
 export function ChartWrapper({
-  title,
-  subtitle,
-  isLoading,
-  error,
-  lastUpdated,
-  timeframes,
-  activeTimeframe,
-  onTimeframeChange,
-  exportable,
-  children,
-  className,
-  height: initialHeight,
-  onRetry,
-  quickStats,
-  legendItems,
-  dataSource,
-  hint,
-  onExportCSV,
+  title, subtitle, isLoading, error, lastUpdated, timeframes, activeTimeframe,
+  onTimeframeChange, exportable, children, className, height: initialHeight,
+  onRetry, quickStats, legendItems, dataSource, hint, onExportCSV,
 }: ChartWrapperProps) {
   const chartRef = useRef<HTMLDivElement>(null)
-
   const hasQuickStats = quickStats !== undefined
   const isUp = quickStats ? quickStats.change >= 0 : true
   const isNeutral = quickStats ? quickStats.change === 0 : true
@@ -81,8 +46,9 @@ export function ChartWrapper({
     link.click()
   }, [title])
 
-  // Adjust height for mobile
-  const height = initialHeight
+  const chartHeight = initialHeight
+    ? initialHeight - (hasQuickStats ? 80 : 0) - (legendItems?.length ? 24 : 0)
+    : undefined
 
   return (
     <div ref={chartRef} className={cn('rounded-xl border bg-card text-card-foreground overflow-hidden', className)}>
@@ -100,17 +66,14 @@ export function ChartWrapper({
                 </ShadcnTooltip>
               )}
               {quickStats && (
-                <span
-                  className={cn(
-                    'flex items-center gap-0.5 text-[10px] sm:text-xs font-medium px-1.5 py-0.5 rounded shrink-0',
-                    isNeutral && 'bg-muted text-muted-foreground',
-                    !isNeutral && isUp && 'bg-gain/10 text-gain',
-                    !isNeutral && !isUp && 'bg-loss/10 text-loss',
-                  )}
-                >
+                <span className={cn(
+                  'flex items-center gap-0.5 text-[10px] sm:text-xs font-medium px-1.5 py-0.5 rounded shrink-0',
+                  isNeutral && 'bg-muted text-muted-foreground',
+                  !isNeutral && isUp && 'bg-gain/10 text-gain',
+                  !isNeutral && !isUp && 'bg-loss/10 text-loss',
+                )}>
                   {isNeutral ? <Minus className="h-3 w-3" /> : isUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                  {isUp ? '+' : ''}
-                  {quickStats.changePercent.toFixed(2)}%
+                  {isUp ? '+' : ''}{quickStats.changePercent.toFixed(2)}%
                 </span>
               )}
             </div>
@@ -122,9 +85,7 @@ export function ChartWrapper({
               <TimeframeSelector timeframes={timeframes} active={activeTimeframe} onChange={onTimeframeChange} />
             )}
             <div className="flex items-center gap-2">
-              {exportable && (
-                <ExportButton onExportPNG={handleExportPNG} onExportCSV={onExportCSV} />
-              )}
+              {exportable && <ExportButton onExportPNG={handleExportPNG} onExportCSV={onExportCSV} />}
               {lastUpdated && <div className="hidden xs:block"><LastUpdated date={lastUpdated} /></div>}
             </div>
           </div>
@@ -174,17 +135,15 @@ export function ChartWrapper({
         )}
       </div>
 
-      <div style={height ? { minHeight: 300, maxHeight: height } : undefined}>
+      <div style={chartHeight ? { height: chartHeight, width: '100%' } : { width: '100%' }}>
         {isLoading ? (
           <div className="flex h-full items-center justify-center p-4">
-            <div className="w-full h-full min-h-[300px]"><Skeleton className="h-full w-full rounded-lg" /></div>
+            <div className="w-full h-full"><Skeleton className="h-full w-full rounded-lg" /></div>
           </div>
         ) : error ? (
           <ErrorState message={error.message} onRetry={onRetry} />
         ) : (
-          <div className="relative w-full h-full">
-            {children}
-          </div>
+          children
         )}
       </div>
     </div>

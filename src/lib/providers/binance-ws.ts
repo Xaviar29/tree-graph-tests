@@ -5,7 +5,7 @@ export interface LiquidationEvent {
   quantity: number
   notional: number
   timestamp: number
-  exchange: 'binance'
+  exchange: 'binance' | 'bybit' | 'bitmex' | 'deribit' | 'hyperliquid'
 }
 
 interface ForceOrderData {

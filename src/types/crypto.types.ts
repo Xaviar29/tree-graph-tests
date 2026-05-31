@@ -9,6 +9,14 @@ export interface CryptoMarket {
   priceChangePercent24h: number
   sparkline7d: number[]
   image?: string
+  athPrice?: number
+  athDate?: string
+  athPercentage?: number
+  athMarketCap?: number
+  maxSupply?: number
+  circulatingSupply?: number
+  totalSupply?: number
+  athSupply?: number
 }
 
 export interface CryptoGlobal {

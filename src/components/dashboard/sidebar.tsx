@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useTheme } from '@/hooks/use-theme'
 import { cn } from '@/lib/utils'
 import {
   BarChart3,
@@ -13,6 +14,7 @@ import {
   DollarSign,
   Bitcoin,
   Flame,
+  Wrench,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react'
@@ -21,18 +23,21 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 const navItems = [
   { href: '/', label: 'Overview', icon: BarChart3 },
+  { href: '/crypto', label: 'Crypto', icon: Bitcoin },
+  { href: '/onfire', label: 'On Fire', icon: Flame },
+  { href: '/liquidations', label: 'Liquidations', icon: Flame },
   { href: '/indices', label: 'Indices', icon: TrendingUp },
   { href: '/breadth', label: 'Breadth', icon: Activity },
   { href: '/sentiment', label: 'Sentiment', icon: Gauge },
   { href: '/sectors', label: 'Sectors', icon: PieChart },
   { href: '/commodities', label: 'Commodities', icon: Package },
   { href: '/forex', label: 'Forex', icon: DollarSign },
-  { href: '/crypto', label: 'Crypto', icon: Bitcoin },
-  { href: '/liquidations', label: 'Liquidations', icon: Flame },
+  { href: '/tools', label: 'Tools', icon: Wrench },
 ]
 
 export function Sidebar() {
   const pathname = usePathname()
+  const { theme } = useTheme()
   const [collapsed, setCollapsed] = useState(false)
 
   return (
@@ -44,16 +49,31 @@ export function Sidebar() {
     >
       <div className="flex h-14 items-center justify-between border-b px-3">
         <AnimatePresence mode="wait">
-          {!collapsed && (
-            <motion.span
+          {!collapsed ? (
+            <motion.div
+              key="expanded"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
-              className="text-sm font-bold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent"
+              className="flex items-center gap-2"
             >
-              TradingDiff
-            </motion.span>
+              <img src={theme === 'dark' ? '/marketpulse-dark.png' : '/marketpulse.png'} alt="" className="h-5 w-5" />
+              <span className="text-sm font-bold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
+                MarketPulse
+              </span>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="collapsed"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="flex justify-center flex-1"
+            >
+              <img src={theme === 'dark' ? '/marketpulse-dark.png' : '/marketpulse.png'} alt="" className="h-6 w-6" />
+            </motion.div>
           )}
         </AnimatePresence>
         <button

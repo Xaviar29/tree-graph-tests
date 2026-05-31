@@ -8,6 +8,8 @@ import { RRGChart } from '@/components/charts/rrg-chart'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ErrorState } from '@/components/shared/error-state'
 import { formatChange } from '@/lib/utils'
+import { Info } from 'lucide-react'
+import { Tooltip as ShadcnTooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
 export default function SectorsPage() {
   const { 
@@ -86,7 +88,17 @@ export default function SectorsPage() {
         <TabsContent value="rrg">
           <Card>
             <CardHeader>
-              <CardTitle>RRG - Relative Rotation Graph</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                RRG - Relative Rotation Graph
+                <ShadcnTooltip>
+                  <TooltipTrigger>
+                    <Info className="h-3.5 w-3.5 text-muted-foreground/40 cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-72 text-xs">
+                    Relative Rotation Graph (RRG) plots sectors by RS-Ratio (x-axis, momentum) and RS-Momentum (y-axis, acceleration). Leading = top-right, Improving = bottom-right, Weakening = top-left, Lagging = bottom-left.
+                  </TooltipContent>
+                </ShadcnTooltip>
+              </CardTitle>
               <CardDescription>
                 Muestra la fuerza y momento relativo de los sectores frente al S&P 500 (SPY).
               </CardDescription>

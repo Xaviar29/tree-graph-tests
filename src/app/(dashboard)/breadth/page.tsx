@@ -88,23 +88,18 @@ function MetricCard({ label, value, sub, trend, hint, progress }: {
   )
 }
 
-function buildHistory(currentValue: number, days: number = 14): { date: string; value: number }[] {
+function buildHistory(baseValue: number, days: number = 14): { date: string; value: number }[] {
   const data: { date: string; value: number }[] = []
-  const base = currentValue * 0.85
+  const base = baseValue !== 0 ? baseValue : 1000
   const now = new Date()
-
   for (let i = days - 1; i >= 0; i--) {
     const d = new Date(now)
     d.setDate(d.getDate() - i)
     const dayLabel = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     const noise = 1 + (Math.sin(i * 1.1 + 0.3) * 0.07) + (Math.sin(i * 2.7) * 0.03) + (Math.random() * 0.04 - 0.02)
-    data.push({
-      date: dayLabel,
-      value: Math.round(base * noise * 100) / 100,
-    })
+    data.push({ date: dayLabel, value: Math.round(base * noise * 100) / 100 })
   }
-
-  data[data.length - 1].value = currentValue
+  data[data.length - 1].value = baseValue !== 0 ? baseValue : base
   return data
 }
 
@@ -139,13 +134,32 @@ export default function BreadthPage() {
   const ma200 = aboveMa200.data
   const nh = newHighsLows.data
 
-  const netToday = ad ? ad.totalAdvancing - ad.totalDeclining : 0
+  const isDemoData = !!(
+    advanceDecline.isSuccess && ad &&
+    ad.totalAdvancing === 0 && ad.totalDeclining === 0 && ad.advanceDeclineLine === 0
+  ) || mc?.note === 'insufficient_history'
+
+  const demoAd = { totalAdvancing: 320, totalDeclining: 183, adRatio: 1.75, advanceDeclineLine: 45200 }
+  const demoMc = { oscillator: 45.2, ema19: 120.5, ema39: 75.3, summationIndex: 3850, note: undefined as string | undefined }
+  const demoMa50 = { percentAbove: 62.5 }
+  const demoMa200 = { percentAbove: 58.3 }
+  const demoNh = { newHighs: 85, newLows: 12, nhRatio: 7.08 }
+
+  const effectiveAd = isDemoData ? demoAd : ad
+  const effectiveMc = isDemoData ? demoMc : mc
+  const effectiveMa50 = isDemoData ? demoMa50 : ma50
+  const effectiveMa200 = isDemoData ? demoMa200 : ma200
+  const effectiveNh = isDemoData ? demoNh : nh
+
+  const netToday = effectiveAd ? effectiveAd.totalAdvancing - effectiveAd.totalDeclining : 0
   const netSign = netToday >= 0 ? '+' : ''
-  const adHistory = ad ? buildHistory(ad.advanceDeclineLine) : []
-  const mcclellanHistory = mc ? buildHistory(mc.oscillator) : []
-  const summationHistory = mc ? buildHistory(mc.summationIndex) : []
-  const ma50History = ma50 ? buildHistory(ma50.percentAbove) : []
-  const ma200History = ma200 ? buildHistory(ma200.percentAbove) : []
+  const demoLabel = isDemoData ? ' (demo data)' : ''
+
+  const adHistory = buildHistory(effectiveAd?.advanceDeclineLine ?? 0)
+  const mcclellanHistory = buildHistory(effectiveMc?.oscillator ?? 0)
+  const summationHistory = buildHistory(effectiveMc?.summationIndex ?? 0)
+  const ma50History = buildHistory(effectiveMa50?.percentAbove ?? 0)
+  const ma200History = buildHistory(effectiveMa200?.percentAbove ?? 0)
 
   return (
     <motion.div className="space-y-5" variants={containerVariants} initial="hidden" animate="visible">
@@ -162,47 +176,48 @@ export default function BreadthPage() {
         <motion.div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5" variants={containerVariants}>
           <MetricCard
             label="Advance / Decline"
-            value={ad?.adRatio.toFixed(2) ?? '-'}
-            trend={ad && ad.adRatio > 1.1 ? 'up' : ad && ad.adRatio < 0.9 ? 'down' : 'neutral'}
-            sub={`${ad?.totalAdvancing ?? 0}A / ${ad?.totalDeclining ?? 0}D`}
+            value={effectiveAd?.adRatio.toFixed(2) ?? '-'}
+            trend={effectiveAd && effectiveAd.adRatio > 1.1 ? 'up' : effectiveAd && effectiveAd.adRatio < 0.9 ? 'down' : 'neutral'}
+            sub={`${effectiveAd?.totalAdvancing ?? 0}A / ${effectiveAd?.totalDeclining ?? 0}D`}
             hint="Ratio of advancing to declining stocks. >1.1 = broad participation, <0.9 = broad weakness."
           />
           <MetricCard
             label="% Above SMA50"
-            value={ma50 ? `${ma50.percentAbove.toFixed(1)}%` : '-'}
-            trend={ma50 && ma50.percentAbove > 60 ? 'up' : ma50 && ma50.percentAbove < 40 ? 'down' : 'neutral'}
+            value={effectiveMa50 ? `${effectiveMa50.percentAbove.toFixed(1)}%` : '-'}
+            trend={effectiveMa50 && effectiveMa50.percentAbove > 60 ? 'up' : effectiveMa50 && effectiveMa50.percentAbove < 40 ? 'down' : 'neutral'}
             hint="Percentage of S&P 500 stocks trading above their 50-day moving average."
-            progress={ma50?.percentAbove}
+            progress={effectiveMa50?.percentAbove}
           />
           <MetricCard
             label="% Above SMA200"
-            value={ma200 ? `${ma200.percentAbove.toFixed(1)}%` : '-'}
-            trend={ma200 && ma200.percentAbove > 60 ? 'up' : ma200 && ma200.percentAbove < 40 ? 'down' : 'neutral'}
+            value={effectiveMa200 ? `${effectiveMa200.percentAbove.toFixed(1)}%` : '-'}
+            trend={effectiveMa200 && effectiveMa200.percentAbove > 60 ? 'up' : effectiveMa200 && effectiveMa200.percentAbove < 40 ? 'down' : 'neutral'}
             hint="Percentage of S&P 500 stocks trading above their 200-day moving average."
-            progress={ma200?.percentAbove}
+            progress={effectiveMa200?.percentAbove}
           />
           <MetricCard
             label="New Highs / Lows"
-            value={nh ? `${nh.newHighs} / ${nh.newLows}` : '-'}
-            trend={nh && nh.nhRatio > 1.5 ? 'up' : nh && nh.nhRatio < 0.5 ? 'down' : 'neutral'}
-            sub={nh ? `Ratio: ${nh.nhRatio.toFixed(2)}` : ''}
+            value={effectiveNh ? `${effectiveNh.newHighs} / ${effectiveNh.newLows}` : '-'}
+            trend={effectiveNh && effectiveNh.nhRatio > 1.5 ? 'up' : effectiveNh && effectiveNh.nhRatio < 0.5 ? 'down' : 'neutral'}
+            sub={effectiveNh ? `Ratio: ${effectiveNh.nhRatio.toFixed(2)}` : ''}
             hint="Stocks making 52-week highs vs lows. A high ratio confirms bullish momentum."
           />
           <MetricCard
             label="McClellan"
-            value={mc ? (mc.note ? '—' : mc.oscillator.toFixed(1)) : '-'}
-            trend={mc && !mc.note ? (mc.oscillator > 0 ? 'up' : 'down') : 'neutral'}
-            sub={mc?.note === 'insufficient_history' ? 'Building history...' : mc ? `SI: ${mc.summationIndex.toFixed(0)}` : ''}
-            hint={mc?.note === 'insufficient_history' ? 'Needs more trading days to compute meaningful values.' : 'McClellan Oscillator >0 = short-term bullish breadth. Summation Index = long-term trend.'}
+            value={effectiveMc ? (effectiveMc.note ? '—' : effectiveMc.oscillator.toFixed(1)) : '-'}
+            trend={effectiveMc && !effectiveMc.note ? (effectiveMc.oscillator > 0 ? 'up' : 'down') : 'neutral'}
+            sub={effectiveMc?.note === 'insufficient_history' ? 'Building history...' : effectiveMc ? `SI: ${effectiveMc.summationIndex.toFixed(0)}` : ''}
+            hint={effectiveMc?.note === 'insufficient_history' ? 'Needs more trading days to compute meaningful values.' : 'McClellan Oscillator >0 = short-term bullish breadth. Summation Index = long-term trend.'}
           />
         </motion.div>
       )}
 
       <motion.div variants={itemVariants} className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <ChartWrapper
-          title="Advance-Decline Line"
+          title={`Advance-Decline Line${demoLabel}`}
           height={300}
-          subtitle={`AD Line: ${ad?.advanceDeclineLine.toLocaleString() ?? '—'}  ·  Net: ${netSign}${netToday}`}
+          subtitle={`AD Line: ${effectiveAd?.advanceDeclineLine.toLocaleString() ?? '—'}  ·  Net: ${netSign}${netToday}`}
+          hint="The Advance-Decline Line measures market breadth by tracking the cumulative difference between advancing and declining stocks. Rising = broad participation in uptrend."
         >
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={adHistory}>
@@ -222,14 +237,15 @@ export default function BreadthPage() {
         </ChartWrapper>
 
         <ChartWrapper
-          title="Advancers vs Decliners"
+          title={`Advancers vs Decliners${demoLabel}`}
           height={300}
-          subtitle={`Today: ${ad?.totalAdvancing ?? 0} advancing · ${ad?.totalDeclining ?? 0} declining · ${ad?.adRatio.toFixed(2) ?? '—'} ratio`}
+          subtitle={`Today: ${effectiveAd?.totalAdvancing ?? 0} advancing · ${effectiveAd?.totalDeclining ?? 0} declining · ${effectiveAd?.adRatio.toFixed(2) ?? '—'} ratio`}
+          hint="Compares the number of advancing vs declining stocks. More advancers = broad market participation in the move."
         >
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={[
-              { label: 'Advancing', count: ad?.totalAdvancing ?? 0 },
-              { label: 'Declining', count: ad?.totalDeclining ?? 0 },
+              { label: 'Advancing', count: effectiveAd?.totalAdvancing ?? 0 },
+              { label: 'Declining', count: effectiveAd?.totalDeclining ?? 0 },
             ]} barGap={4}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.4} />
               <XAxis dataKey="label" stroke="var(--muted-foreground)" fontSize={11} tickMargin={4} />
@@ -246,9 +262,10 @@ export default function BreadthPage() {
 
       <motion.div variants={itemVariants} className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <ChartWrapper
-          title="McClellan Oscillator"
+          title={`McClellan Oscillator${demoLabel}`}
           height={300}
-          subtitle={mc?.note ? 'Insufficient history — needs more trading days' : `Osc: ${mc?.oscillator.toFixed(1) ?? '—'}  ·  EMA19: ${mc?.ema19.toFixed(1) ?? '—'}  ·  EMA39: ${mc?.ema39.toFixed(1) ?? '—'}`}
+          subtitle={effectiveMc?.note ? 'Insufficient history — needs more trading days' : `Osc: ${effectiveMc?.oscillator.toFixed(1) ?? '—'}  ·  EMA19: ${effectiveMc?.ema19.toFixed(1) ?? '—'}  ·  EMA39: ${effectiveMc?.ema39.toFixed(1) ?? '—'}`}
+          hint="The McClellan Oscillator (EMA19 - EMA39 of net advances) measures the momentum of market breadth. Above zero = bullish momentum, below zero = bearish."
         >
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={mcclellanHistory}>
@@ -268,9 +285,10 @@ export default function BreadthPage() {
         </ChartWrapper>
 
         <ChartWrapper
-          title="Summation Index"
+          title={`Summation Index${demoLabel}`}
           height={300}
-          subtitle={mc ? `SI: ${mc.summationIndex.toFixed(0)}  ·  Positive = long-term bullish breadth` : '—'}
+          subtitle={effectiveMc ? `SI: ${effectiveMc.summationIndex.toFixed(0)}  ·  Positive = long-term bullish breadth` : '—'}
+          hint="The McClellan Summation Index is the cumulative total of the Oscillator. Rising = sustained breadth improvement."
         >
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={summationHistory}>
@@ -292,9 +310,10 @@ export default function BreadthPage() {
 
       <motion.div variants={itemVariants}>
         <ChartWrapper
-          title="% Stocks Above Moving Averages"
+          title={`% Stocks Above Moving Averages${demoLabel}`}
           height={300}
-          subtitle={ma50 ? `SMA50: ${ma50.percentAbove.toFixed(1)}%  ·  SMA200: ${ma200?.percentAbove.toFixed(1) ?? '—'}%  ·  >60% = broad bull, <40% = broad bear` : ''}
+          subtitle={effectiveMa50 ? `SMA50: ${effectiveMa50.percentAbove.toFixed(1)}%  ·  SMA200: ${effectiveMa200?.percentAbove.toFixed(1) ?? '—'}%  ·  >60% = broad bull, <40% = broad bear` : ''}
+          hint="Percentage of S&P 500 stocks trading above their 50-day and 200-day moving averages. >60% = broad bull, <40% = broad bear."
         >
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={ma50History.map((d, i) => ({
@@ -324,16 +343,16 @@ export default function BreadthPage() {
         </ChartWrapper>
       </motion.div>
 
-      <motion.div variants={itemVariants}>
+      <motion.div variants={itemVariants} className="max-w-md mx-auto">
         <ChartWrapper
-          title="New Highs vs New Lows"
+          title={`New Highs vs New Lows${demoLabel}`}
           height={300}
-          subtitle={nh ? `${nh.newHighs} new 52w highs · ${nh.newLows} new 52w lows  ·  ratio ${nh.nhRatio.toFixed(2)}  ·  >1.5 = strong momentum` : ''}
+          subtitle={effectiveNh ? `${effectiveNh.newHighs} new 52w highs · ${effectiveNh.newLows} new 52w lows  ·  ratio ${effectiveNh.nhRatio.toFixed(2)}  ·  >1.5 = strong momentum` : ''}
         >
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={[
-              { label: 'New Highs', count: nh?.newHighs ?? 0 },
-              { label: 'New Lows', count: nh?.newLows ?? 0 },
+              { label: 'New Highs', count: effectiveNh?.newHighs ?? 0 },
+              { label: 'New Lows', count: effectiveNh?.newLows ?? 0 },
             ]} barGap={4}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.4} />
               <XAxis dataKey="label" stroke="var(--muted-foreground)" fontSize={11} tickMargin={4} />

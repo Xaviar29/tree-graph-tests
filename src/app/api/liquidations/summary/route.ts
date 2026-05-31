@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { liquidationBuffer } from '@/lib/providers/binance-ws'
+import { connectAllExchanges, getCombinedSummary } from '@/lib/providers/liquidations'
 import { withRateLimit } from '@/lib/cache'
 import type { ApiResponse } from '@/types/api.types'
 
@@ -14,9 +14,9 @@ interface SummaryData {
 
 export async function GET(request: NextRequest) {
   return withRateLimit(request, async () => {
-    liquidationBuffer.connect()
+    connectAllExchanges()
     const symbol = request.nextUrl.searchParams.get('symbol') || undefined
-    const data = liquidationBuffer.getSummary(symbol)
-    return NextResponse.json({ success: true, data, meta: { cachedAt: new Date().toISOString(), source: 'binance-ws', ttlMs: 5000 } } satisfies ApiResponse<SummaryData>)
+    const data = getCombinedSummary(symbol)
+    return NextResponse.json({ success: true, data, meta: { cachedAt: new Date().toISOString(), source: 'multi-exchange-ws', ttlMs: 5000 } } satisfies ApiResponse<SummaryData>)
   })
 }

@@ -94,7 +94,8 @@ export function CryptoTable({ data, isLoading }: CryptoTableProps) {
 
   return (
     <div>
-      <Table>
+      <div className="overflow-auto max-h-[440px]">
+        <Table>
         <TableHeader>
           {table.getHeaderGroups().map((hg) => (
             <TableRow key={hg.id}>
@@ -129,10 +130,24 @@ export function CryptoTable({ data, isLoading }: CryptoTableProps) {
           ))}
         </TableBody>
       </Table>
+      </div>
       <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
-        <button onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()} className="opacity-50 hover:opacity-100 disabled:opacity-20">First</button>
+        <div className="flex items-center gap-1">
+          <button onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()} className="px-2 py-1 rounded hover:bg-accent disabled:opacity-20">First</button>
+          <button onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()} className="px-2 py-1 rounded hover:bg-accent disabled:opacity-20">Prev</button>
+          {Array.from({ length: table.getPageCount() }, (_, i) => (
+            <button
+              key={i}
+              onClick={() => table.setPageIndex(i)}
+              className={`px-2 py-1 rounded ${table.getState().pagination.pageIndex === i ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'}`}
+            >
+              {i + 1}
+            </button>
+          ))}
+          <button onClick={() => table.nextPage()} disabled={!table.getCanNextPage()} className="px-2 py-1 rounded hover:bg-accent disabled:opacity-20">Next</button>
+          <button onClick={() => table.setPageIndex(table.getPageCount() - 1)} disabled={!table.getCanNextPage()} className="px-2 py-1 rounded hover:bg-accent disabled:opacity-20">Last</button>
+        </div>
         <span>Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}</span>
-        <button onClick={() => table.setPageIndex(table.getPageCount() - 1)} disabled={!table.getCanNextPage()} className="opacity-50 hover:opacity-100 disabled:opacity-20">Last</button>
       </div>
     </div>
   )
